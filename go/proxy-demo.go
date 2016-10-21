@@ -8,27 +8,25 @@ import (
     "io/ioutil"
 )
 
-const AbuyunProxyHost = "proxy.abuyun.com:9010"
+const ProxyServer = "proxy.abuyun.com:9010"
 
-type AbuyunProxy struct {
-    AppID string
-    AppSecret string
+type ProxyAuth struct {
+    License string
+    SecretKey string
 }
 
-func (p AbuyunProxy) ProxyClient() http.Client {
-    proxyURL, _ := url.Parse("http://"+p.AppID+":"+p.AppSecret+"@"+AbuyunProxyHost)
+func (p ProxyAuth) ProxyClient() http.Client {
+    proxyURL, _ := url.Parse("http://" + p.License + ":" + p.SecretKey + "@" + ProxyServer)
     return http.Client{Transport: &http.Transport{Proxy:http.ProxyURL(proxyURL)}}
 }
 
-
 func main()  {
-    targetURI := "http://www.abuyun.com/test/proxy.php"
+    targetURI := "http://proxy.abuyun.com/proxy.php"
     //targetURI := "http://www.abuyun.com/switch-ip"
     //targetURI := "http://www.abuyun.com/current-ip"
-    //targetURI := "https://www.baidu.com"
 
     // 初始化 proxy http client
-    client := AbuyunProxy{AppID: "your appid", AppSecret: "your appsecret"}.ProxyClient()
+    client := ProxyAuth{License: "H01234567890123P", SecretKey: "0123456789012345"}.ProxyClient()
 
     request, _ := http.NewRequest("GET", targetURI, bytes.NewBuffer([] byte(``)))
 
@@ -46,11 +44,11 @@ func main()  {
             return
         }
         response.Body.Close()
+
         body := string(bodyByte)
 
         fmt.Println("Response Status:", response.Status)
         fmt.Println("Response Header:", response.Header)
         fmt.Println("Response Body:\n", body)
     }
-
 }

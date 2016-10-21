@@ -17,7 +17,7 @@ const proxyPass = "0123456789012345";
 
 const proxyUrl = "http://" + proxyUser + ":" + proxyPass + "@" + proxyHost + ":" + proxyPort;
 
-const proxiedRequest = request.defaults({'proxy': proxyUrl});
+const proxiedRequest = request.defaults({"proxy": proxyUrl});
 
 const options = {
     url     : targetUrl,
