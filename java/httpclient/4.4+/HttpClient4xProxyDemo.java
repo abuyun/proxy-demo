@@ -1,99 +1,211 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.entity.GzipDecompressingEntity;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.NameValuePair;
 import org.apache.http.util.EntityUtils;
 
-public class HttpClient4xProxyDemo
+public class JavaHttpClient45Demo
 {
-    final static String ProxyUser = "H01234567890123P";
-    final static String ProxyPass = "0123456789012345";
+    // 代理服务器
+    final static String proxyHost = "proxy.abuyun.com";
+    final static Integer proxyPort = 9010;
 
-    final static String ProxyHost = "proxy.abuyun.com";
-    final static Integer ProxyPort = 9010;
+    // 代理隧道验证信息
+    final static String proxyUser = "H01234567890123P";
+    final static String proxyPass = "0123456789012345";
 
-    final static String ProxyHeadKey = "Proxy-Switch-Ip";
-    final static String ProxyHeadVal = "yes";
+    // IP切换协议头
+    final static String switchIpHeaderKey = "Proxy-Switch-Ip";
+    final static String switchIpHeaderVal = "yes";
 
-    public static void getUrlProxyContent(String url)
-    {
-        BasicHeader header = new BasicHeader(ProxyHeadKey, ProxyHeadVal);
-        List<Header>list = new ArrayList<Header>();
-        list.add(header);
+    private static PoolingHttpClientConnectionManager cm = null;
+    private static HttpRequestRetryHandler httpRequestRetryHandler = null;
+    private static HttpHost proxy = null;
 
-        HttpHost target = new HttpHost(ProxyHost, ProxyPort, "http");
+    private static CredentialsProvider credsProvider = null;
+    private static RequestConfig reqConfig = null;
 
-        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+    static {
+        ConnectionSocketFactory plainsf = PlainConnectionSocketFactory.getSocketFactory();
+        LayeredConnectionSocketFactory sslsf = SSLConnectionSocketFactory.getSocketFactory();
+
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+            .register("http", plainsf)
+            .register("https", sslsf)
+            .build();
+
+        cm = new PoolingHttpClientConnectionManager(registry);
+        cm.setMaxTotal(20);
+        cm.setDefaultMaxPerRoute(5);
+
+        proxy = new HttpHost(proxyHost, proxyPort, "http");
+
+        credsProvider = new BasicCredentialsProvider();
         credsProvider.setCredentials(
-            new AuthScope(target.getHostName(), target.getPort()),
-            new UsernamePasswordCredentials(ProxyUser, ProxyPass));
+            AuthScope.ANY,
+            //new AuthScope(proxyHost, proxyPort),
+            new UsernamePasswordCredentials(proxyUser, proxyPass));
 
-        CloseableHttpClient httpClient = HttpClients.custom()
-            .setDefaultCredentialsProvider(credsProvider)
-            .setDefaultHeaders(list).build();
+        reqConfig = RequestConfig.custom()
+            .setConnectionRequestTimeout(5000)
+            .setConnectTimeout(5000)
+            .setSocketTimeout(5000)
+            .setExpectContinueEnabled(false)
+            .setProxy(new HttpHost(proxyHost, proxyPort))
+            //.setAuthenticationEnabled(true)
+            //.setProxyPreferredAuthSchemes(Arrays.asList(AuthSchemes.BASIC))
+            .build();
+    }
 
-        //HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credsProvider).build();
+    public static void doRequest(HttpRequestBase httpReq) {
+        CloseableHttpResponse httpResp = null;
 
-        // Create AuthCache instance
-        AuthCache authCache = new BasicAuthCache();
-        // Generate BASIC scheme object and add it to the local
-        // auth cache
-        BasicScheme basicAuth = new BasicScheme();
-        authCache.put(target, basicAuth);
+        try {
+            setHeaders(httpReq);
 
-        // Add AuthCache to the execution context
-        HttpClientContext localContext = HttpClientContext.create();
-        localContext.setAuthCache(authCache);
+            httpReq.setConfig(reqConfig);
 
-        HttpGet httpGet = new HttpGet(url);
+            CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(cm)
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
 
-        CloseableHttpResponse response = null;
-        //HttpResponse response = null;
-        try
-        {
-            response = httpClient.execute(target, httpGet, localContext);
+            AuthCache authCache = new BasicAuthCache();
+            authCache.put(proxy, new BasicScheme());
 
-            System.out.println(EntityUtils.toString(response.getEntity()));
-        }
-        catch (IOException e)
-        {
+            HttpClientContext localContext = HttpClientContext.create();
+            localContext.setAuthCache(authCache);
+
+            httpResp = httpClient.execute(httpReq, localContext);
+            //httpResp = httpClient.execute(proxy, httpReq, localContext);
+
+            int statusCode = httpResp.getStatusLine().getStatusCode();
+
+            System.out.println(statusCode);
+
+            BufferedReader rd = new BufferedReader(new InputStreamReader(httpResp.getEntity().getContent()));
+
+            String line = "";
+            while((line = rd.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally
-        {
+        } finally {
+            try {
+                if (httpResp != null) {
+                    httpResp.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public static void main(String[] args)
-    {
-        getUrlProxyContent("http://proxy.abuyun.com/current-ip");
+    /**
+     * 设置请求头
+     *
+     * @param httpReq
+     */
+    private static void setHeaders(HttpRequestBase httpReq) {
+        httpReq.setHeader("Accept-Encoding", null);
+        httpReq.setHeader(switchIpHeaderKey, switchIpHeaderVal);
+    }
 
-        try
-        {
-            Thread.sleep(10000);
+    /**
+     * 处理response
+     *
+     * @param httpResp
+     * @return
+     */
+    private static CloseableHttpResponse handleResponse(CloseableHttpResponse httpResp) {
+        Header header = httpResp.getEntity().getContentEncoding();
+        if (header != null) {
+            HeaderElement[] elem = header.getElements();
+            for (int i = 0; i < elem.length; i++) {
+                if (elem[i].getName().equalsIgnoreCase("gzip")) {
+                    httpResp.setEntity(new GzipDecompressingEntity(httpResp.getEntity()));
+                }
+            }
         }
-        catch (InterruptedException e)
-        {
+        return httpResp;
+    }
+
+    public static void doPostRequest() {
+        try {
+            // 要访问的目标页面
+            HttpPost httpPost = new HttpPost("https://test.abuyun.com/proxy.php");
+
+            // 设置表单参数
+            List<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair("name", "http-cloud-proxy"));
+            params.add(new BasicNameValuePair("params", "{\"broker\":\"abuyun\":\"site\":\"https://www.abuyun.com\"}"));
+
+            httpPost.setEntity(new UrlEncodedFormEntity(params, "utf-8"));
+
+            doRequest(httpPost);
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void doGetRequest() {
+        // 要访问的目标页面
+        String targetUrl = "https://test.abuyun.com/proxy.php";
+        //String targetUrl = "http://proxy.abuyun.com/switch-ip";
+        //String targetUrl = "http://proxy.abuyun.com/current-ip";
+
+        try {
+            HttpGet httpGet = new HttpGet(targetUrl);
+
+            doRequest(httpGet);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        //doGetRequest();
+
+        doPostRequest();
     }
 }

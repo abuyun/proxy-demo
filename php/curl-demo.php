@@ -1,17 +1,17 @@
 <?php
 
 // 切换IP
-define('PROXY_SWITCH_IP_URL', 'http://proxy.abuyun.com/switch-ip');
+define("PROXY_SWITCH_IP_URL", "http://proxy.abuyun.com/switch-ip");
 // 当前IP
-define('PROXY_CURRENT_IP_URL', 'http://proxy.abuyun.com/current-ip');
+define("PROXY_CURRENT_IP_URL", "http://proxy.abuyun.com/current-ip");
 
 // 代理服务器
-define('PROXY_SERVER', 'http://proxy.abuyun.com:9010');
+define("PROXY_SERVER", "http://proxy.abuyun.com:9010");
 
 // 隧道身份信息
-define('PROXY_USER', 'H01234567890123P');
-define('PROXY_PASS', '0123456789012345');
-define('PROXY_AUTH', PROXY_USER . ':' . PROXY_PASS);
+define("PROXY_USER", "H01234567890123P");
+define("PROXY_PASS", "0123456789012345");
+define("PROXY_AUTH", PROXY_USER . ":" . PROXY_PASS);
 
 function request($targetUrl)
 {
@@ -33,7 +33,7 @@ function request($targetUrl)
 
     // 加此请求头会让每个请求都自动切换IP
     curl_setopt ($ch, CURLOPT_HTTPHEADER, [
-        'Proxy-Switch-Ip: yes',
+        "Proxy-Switch-Ip: yes",
     ]);
 
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
@@ -49,8 +49,8 @@ function request($targetUrl)
 
     if (!$result)
     {
-        $error['code'] = curl_errno($ch);
-        $error['msg']  = curl_error($ch);
+        $error["code"] = curl_errno($ch);
+        $error["msg"]  = curl_error($ch);
     }
 
     curl_close($ch);
