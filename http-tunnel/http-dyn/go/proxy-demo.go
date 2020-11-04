@@ -22,8 +22,6 @@ func (p ProxyAuth) ProxyClient() http.Client {
 
 func main()  {
     targetURI := "http://test.abuyun.com"
-    //targetURI := "http://proxy.abuyun.com/switch-ip"
-    //targetURI := "http://proxy.abuyun.com/current-ip"
 
     // 初始化 proxy http client
     client := ProxyAuth{License: "H01234567890123D", SecretKey: "0123456789012345"}.ProxyClient()
