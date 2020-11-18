@@ -4,17 +4,12 @@ import base64
 from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
 
 # 代理服务器
-proxyServer = "http://http-dyn.abuyun.com:9020"
+proxyServer = "http://http-pro.abuyun.com:9010"
 
 # 隧道身份信息
-proxyUser = "H01234567890123D"
-proxyPass = "0123456789012345"
-proxyAuth = "Basic " + base64.urlsafe_b64encode(proxyUser + ":" + proxyPass)
-
-# 隧道身份信息
-#proxyUser = b"H01234567890123D"
-#proxyPass = b"0123456789012345"
-#proxyAuth = "Basic " + base64.b64encode(proxyUser + b":" + proxyPass).decode()
+proxyUser = b"H01234567890123P"
+proxyPass = b"0123456789012345"
+proxyAuth = "Basic " + base64.b64encode(proxyUser + b":" + proxyPass).decode()
 
 class ProxyMiddleware(HttpProxyMiddleware):
     proxies = {}

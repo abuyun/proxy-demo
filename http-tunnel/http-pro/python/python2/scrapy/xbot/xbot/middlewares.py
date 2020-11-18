@@ -11,11 +11,6 @@ proxyUser = "H01234567890123P"
 proxyPass = "0123456789012345"
 proxyAuth = "Basic " + base64.urlsafe_b64encode(proxyUser + ":" + proxyPass)
 
-# 隧道身份信息
-#proxyUser = b"H01234567890123P"
-#proxyPass = b"0123456789012345"
-#proxyAuth = "Basic " + base64.b64encode(proxyUser + b":" + proxyPass).decode()
-
 class ProxyMiddleware(HttpProxyMiddleware):
     proxies = {}
 
