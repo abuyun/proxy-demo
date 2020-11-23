@@ -24,7 +24,7 @@ func main() {
 	targetURI := "https://test.abuyun.com"
 
 	// 初始化 proxy http client
-	client := ProxyAuth{License: "H01234567890123P", SecretKey: "0123456789012345"}.ProxyClient()
+	client := ProxyAuth{License: "H01234567890123D", SecretKey: "0123456789012345"}.ProxyClient()
 
 	request, _ := http.NewRequest("GET", targetURI, bytes.NewBuffer([]byte(``)))
 

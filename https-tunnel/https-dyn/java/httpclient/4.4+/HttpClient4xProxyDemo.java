@@ -51,7 +51,7 @@ public class HttpClient4xProxyDemo
     final static Integer proxyPort = 9020;
 
     // 代理隧道验证信息
-    final static String proxyUser = "H01234567890123P";
+    final static String proxyUser = "H01234567890123D";
     final static String proxyPass = "0123456789012345";
 
     private static PoolingHttpClientConnectionManager cm = null;
