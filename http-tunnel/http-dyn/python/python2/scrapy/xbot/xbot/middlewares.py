@@ -23,3 +23,4 @@ class ProxyMiddleware(HttpProxyMiddleware):
         request.meta["proxy"] = proxyServer
 
         request.headers["Proxy-Authorization"] = proxyAuth
+        request.headers["Connection"] = "close"
