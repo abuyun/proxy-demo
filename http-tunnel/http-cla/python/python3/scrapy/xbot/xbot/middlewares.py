@@ -21,5 +21,7 @@ class ProxyMiddleware(HttpProxyMiddleware):
 
     def process_request(self, request, spider):
         request.meta["proxy"] = proxyServer
+        request.meta["_auth_proxy"] = proxyServer
 
         request.headers["Proxy-Authorization"] = proxyAuth
+        request.headers["Connection"] = "close"
