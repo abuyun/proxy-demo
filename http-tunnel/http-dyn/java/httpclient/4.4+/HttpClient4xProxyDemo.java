@@ -96,6 +96,9 @@ public class JavaHttpClient45Demo
         CloseableHttpResponse httpResp = null;
 
         try {
+            // JDK 8u111版本后，目标页面为HTTPS协议，启用proxy用户密码鉴权
+            System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
+
             setHeaders(httpReq);
 
             httpReq.setConfig(reqConfig);
